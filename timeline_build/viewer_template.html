@@ -174,7 +174,8 @@ function render(bundle){
     let d="<p>"+esc(ev.body)+"</p>";
     if(ev.parties||ev.docs){ d+='<dl class="dl">'; if(ev.parties)d+="<dt>Parties</dt><dd>"+esc(ev.parties)+"</dd>"; if(ev.docs)d+="<dt>Documents</dt><dd>"+esc(ev.docs)+"</dd>"; d+="</dl>"; }
     if(ev.flag) d+='<span class="flag">'+esc(ev.flag)+"</span>";
-    return '<div class="'+cls+'" data-track="'+esc(ev.track)+'" data-sort="'+ev.sort+'"'+(ev.raid?' data-raid="1"':'')+'>'+
+    const concAttr=ev.concurrentTracks&&ev.concurrentTracks.length?' data-concurrent="'+esc(ev.concurrentTracks.join(','))+'"':'';
+    return '<div class="'+cls+'" data-track="'+esc(ev.track)+'" data-sort="'+ev.sort+'"'+(ev.raid?' data-raid="1"':'')+concAttr+'>'+
       '<div class="ev-date">'+esc(ev.date)+'</div>'+
       '<div class="cap"><span class="cdot"></span><span class="ctxt">'+esc(ev.heading)+'</span><span class="cchev">&#9654;</span></div>'+
       '<div class="detail"><div class="detail-in">'+d+'</div></div></div>';
@@ -217,6 +218,27 @@ function draw(){
       if(raid){ out+='<circle cx="'+x+'" cy="'+cy+'" r="'+(r+1)+'" fill="none" stroke="#dc2626" stroke-width="2" opacity="'+dop+'"/><circle cx="'+x+'" cy="'+cy+'" r="'+(r-2)+'" fill="#dc2626" opacity="'+dop+'"/>'; }
       else if(today){ out+='<circle cx="'+x+'" cy="'+cy+'" r="'+(r+1)+'" fill="'+col+'" opacity="'+dop+'"/><circle cx="'+x+'" cy="'+cy+'" r="'+(r-2.5)+'" fill="#fff" opacity="'+dop+'"/>'; }
       else{ out+='<circle cx="'+x+'" cy="'+cy+'" r="'+r+'" fill="'+col+'" opacity="'+dop+'"/>'; }
+    });
+  });
+  // concurrent-track dots (raids, mass terminations etc.)
+  evs.forEach(el=>{
+    if(!el.dataset.concurrent) return;
+    const cap=el.querySelector(".cap");
+    const cy=el.offsetTop+cap.offsetTop+cap.offsetHeight/2;
+    const raid=el.dataset.raid==="1";
+    const mainFocused=focus===el.dataset.track;
+    el.dataset.concurrent.split(",").forEach(ctr=>{
+      if(!TRACKS[ctr]) return;
+      const cx2=laneX(ctr), col2=TRACKS[ctr].color;
+      const cdim=focus&&focus!==ctr&&!mainFocused, cdop=cdim?.18:1;
+      out+='<circle cx="'+cx2+'" cy="'+cy+'" r="'+(D.r+3)+'" fill="#f6f5f2" opacity="'+cdop+'"/>';
+      out+='<line x1="'+cx2+'" y1="'+cy+'" x2="'+D.railw+'" y2="'+cy+'" stroke="'+col2+'" stroke-width="1" opacity="'+(cdim?.07:.28)+'"/>';
+      if(raid){
+        out+='<circle cx="'+cx2+'" cy="'+cy+'" r="'+(D.r+1)+'" fill="none" stroke="#dc2626" stroke-width="2" opacity="'+cdop+'"/>';
+        out+='<circle cx="'+cx2+'" cy="'+cy+'" r="'+(D.r-2)+'" fill="#dc2626" opacity="'+cdop+'"/>';
+      } else {
+        out+='<circle cx="'+cx2+'" cy="'+cy+'" r="'+D.r+'" fill="'+col2+'" opacity="'+cdop+'"/>';
+      }
     });
   });
   svg.innerHTML=out;
