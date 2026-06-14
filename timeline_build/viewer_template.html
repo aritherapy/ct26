@@ -134,6 +134,10 @@ const lockEl=document.getElementById("lock"), appEl=document.getElementById("app
       pwEl=document.getElementById("pw"), errEl=document.getElementById("err"), unlockBtn=document.getElementById("unlock");
 async function attempt(){
   errEl.textContent=""; unlockBtn.disabled=true; unlockBtn.textContent="…";
+  if(!window.isSecureContext || !(window.crypto&&crypto.subtle)){
+    errEl.innerHTML="This page must be opened over <b>https://</b> — decryption is disabled on insecure connections.";
+    unlockBtn.disabled=false; unlockBtn.textContent="Unlock"; return;
+  }
   try{
     const bundle=await decrypt(pwEl.value);
     lockEl.style.display="none"; appEl.style.display="block";
